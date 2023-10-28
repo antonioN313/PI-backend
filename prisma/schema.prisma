@@ -1,0 +1,228 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  id        Int      @id @default(autoincrement())
+  tipo      String
+  titulo    String   @unique
+  descricao String?
+  insumos   Insumo[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("Categorias")
+}
+
+model Insumo {
+  id                Int                 @id @default(autoincrement())
+  titulo            String
+  descricao         String?
+  unidadeMedida     String?
+  idCategoria       Int?
+  categoria         Categoria?          @relation(fields: [idCategoria], references: [id])
+  cotacoes          Cotacao[]
+  listaInsumo       ListaInsumo[]
+  insumoProdutoBase InsumoProdutoBase[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@map("Insumos")
+}
+
+model Fornecedor {
+  id           Int       @id @default(autoincrement())
+  email        String    @unique
+  telefone     String
+  contaTipo    contaTipo
+  pais         String?
+  cep          String?
+  estado       String?
+  cidade       String?
+  bairro       String?
+  rua          String?
+  numero       String?
+  complemento  String?
+  nome         String?
+  cpf          String?   @unique
+  rg           String?   @unique
+  nomeFantasia String?   @unique
+  razaoSocial  String?   @unique
+  cnpj         String?   @unique
+  cotacaos     Cotacao[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@map("Fornecedores")
+}
+
+model Cliente {
+  id           Int         @id @default(autoincrement())
+  email        String      @unique
+  telefone     String
+  contaTipo    contaTipo
+  nome         String?
+  cpf          String?     @unique
+  rg           String?     @unique
+  cnpj         String?     @unique
+  razaoSocial  String?     @unique
+  nomeFantasia String?
+  pais         String?
+  cep          String?
+  estado       String?
+  cidade       String?
+  bairro       String?
+  rua          String?
+  numero       String?
+  complemento  String?
+  orcamentos   Orcamento[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("Clientes")
+}
+
+model Orcamento {
+  id                    Int       @id @default(autoincrement())
+  validade              DateTime?
+  dataOrcamento         DateTime  @default(now())
+  totalMaoObra          Float?
+  totalMateriais        Float?
+  status                status    @default(Pendente)
+  prazoEstimadoProducao Int?
+  observacoes           String?   @db.MediumText
+  idCliente             Int
+  idPedido              Int?
+  pedido                Pedido?
+  cliente               Cliente   @relation(fields: [idCliente], references: [id])
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  produtos              Produto[]
+
+  @@map("Orcamentos")
+}
+
+model Pedido {
+  id          Int       @id @default(autoincrement())
+  pagamento   Float
+  status      status    @default(Pendente)
+  idOrcamento Int       @unique
+  orcamento   Orcamento @relation(fields: [idOrcamento], references: [id])
+
+  @@map("Pedidos")
+}
+
+model Produto {
+  id            Int           @id @default(autoincrement())
+  titulo        String
+  quantidade    Int?
+  valorUnitario Float?
+  observacoes   String?
+  listaInsumos  ListaInsumo[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  Orcamento     Orcamento     @relation(fields: [orcamentoId], references: [id])
+  orcamentoId   Int
+
+  @@map("Produtos")
+}
+
+model Cotacao {
+  id           Int           @id @default(autoincrement())
+  data         DateTime
+  valor        Float
+  unidade      String
+  idFornecedor Int
+  idInsumo     Int
+  fornecedor   Fornecedor    @relation(fields: [idFornecedor], references: [id])
+  insumo       Insumo        @relation(fields: [idInsumo], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  ListaInsumo  ListaInsumo[]
+
+  @@map("Cotacoes")
+}
+
+model ListaInsumo {
+  id         Int      @id @default(autoincrement())
+  quantidade Int      @default(1)
+  unidade    String
+  idProduto  Int
+  idInsumo   Int
+  idCotacao  Int?
+  produto    Produto? @relation(fields: [idProduto], references: [id])
+  insumo     Insumo?  @relation(fields: [idInsumo], references: [id])
+  cotacao    Cotacao? @relation(fields: [idCotacao], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("ListaInsumos")
+}
+
+model Usuario {
+  id          Int         @id @default(autoincrement())
+  tipoUsuario tipoUsuario
+  nome        String
+  cpf         String      @unique
+  email       String      @unique
+  telefone    String
+  senha       String
+  token       String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("Usuarios")
+}
+
+model ProdutoBase {
+  id                  Int                 @id @default(autoincrement())
+  titulo              String
+  observacoes         String?
+  insumosProdutosBase InsumoProdutoBase[]
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  @@map("ProdutosBase")
+}
+
+model InsumoProdutoBase {
+  id            Int          @id @default(autoincrement())
+  quantidade    Float        @default(1)
+  unidade       String
+  idProdutoBase Int
+  idInsumo      Int
+  produtoBase   ProdutoBase? @relation(fields: [idProdutoBase], references: [id])
+  insumos       Insumo?      @relation(fields: [idInsumo], references: [id])
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("InsumosProdutosBase")
+}
+
+enum contaTipo {
+  Fisica
+  Juridica
+}
+
+enum produtoTipo {
+  Base
+  Customizado
+}
+
+enum status {
+  Pendente
+  Iniciado
+  Em_Processo @map("Em Processo")
+  Concluido
+}
+
+enum tipoUsuario {
+  Serralheiro
+  Administrador
+  Vendedor
+}
