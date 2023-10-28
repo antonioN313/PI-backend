@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -51,7 +51,7 @@ model Fornecedor {
   nome         String?
   cpf          String?   @unique
   rg           String?   @unique
-  nomeFantasia String?   @unique
+  nomeFantasia String?
   razaoSocial  String?   @unique
   cnpj         String?   @unique
   cotacaos     Cotacao[]
@@ -95,7 +95,7 @@ model Orcamento {
   totalMateriais        Float?
   status                status    @default(Pendente)
   prazoEstimadoProducao Int?
-  observacoes           String?   @db.MediumText
+  observacoes           String?
   idCliente             Int
   idPedido              Int?
   pedido                Pedido?
@@ -113,6 +113,8 @@ model Pedido {
   status      status    @default(Pendente)
   idOrcamento Int       @unique
   orcamento   Orcamento @relation(fields: [idOrcamento], references: [id])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("Pedidos")
 }
@@ -120,14 +122,14 @@ model Pedido {
 model Produto {
   id            Int           @id @default(autoincrement())
   titulo        String
-  quantidade    Int?
+  quantidade    Float?
   valorUnitario Float?
   observacoes   String?
   listaInsumos  ListaInsumo[]
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
-  Orcamento     Orcamento     @relation(fields: [orcamentoId], references: [id])
-  orcamentoId   Int
+  Orcamento     Orcamento     @relation(fields: [idOrcamento], references: [id])
+  idOrcamento   Int
 
   @@map("Produtos")
 }
@@ -139,6 +141,7 @@ model Cotacao {
   unidade      String
   idFornecedor Int
   idInsumo     Int
+  obsoleta     Boolean?      @default(false)
   fornecedor   Fornecedor    @relation(fields: [idFornecedor], references: [id])
   insumo       Insumo        @relation(fields: [idInsumo], references: [id])
   createdAt    DateTime      @default(now())
@@ -149,17 +152,18 @@ model Cotacao {
 }
 
 model ListaInsumo {
-  id         Int      @id @default(autoincrement())
-  quantidade Int      @default(1)
-  unidade    String
-  idProduto  Int
-  idInsumo   Int
-  idCotacao  Int?
-  produto    Produto? @relation(fields: [idProduto], references: [id])
-  insumo     Insumo?  @relation(fields: [idInsumo], references: [id])
-  cotacao    Cotacao? @relation(fields: [idCotacao], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  quantidade    Float
+  idProduto     Int
+  idInsumo      Int
+  idCotacao     Int?
+  unidade       String?
+  valorUnitario Float?
+  produto       Produto? @relation(fields: [idProduto], references: [id])
+  insumo        Insumo?  @relation(fields: [idInsumo], references: [id])
+  cotacao       Cotacao? @relation(fields: [idCotacao], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("ListaInsumos")
 }
@@ -172,7 +176,6 @@ model Usuario {
   email       String      @unique
   telefone    String
   senha       String
-  token       String
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
@@ -191,15 +194,15 @@ model ProdutoBase {
 }
 
 model InsumoProdutoBase {
-  id            Int          @id @default(autoincrement())
-  quantidade    Float        @default(1)
-  unidade       String
+  id            Int         @id @default(autoincrement())
+  quantidade    Float       @default(1)
   idProdutoBase Int
   idInsumo      Int
-  produtoBase   ProdutoBase? @relation(fields: [idProdutoBase], references: [id])
-  insumos       Insumo?      @relation(fields: [idInsumo], references: [id])
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  unidade       String?
+  produtoBase   ProdutoBase @relation(fields: [idProdutoBase], references: [id])
+  insumos       Insumo      @relation(fields: [idInsumo], references: [id])
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   @@map("InsumosProdutosBase")
 }
